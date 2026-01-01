@@ -312,11 +312,28 @@ export async function syncMarkets() {
     await upsertMarkets(markets);
     lastSyncCursor = lastCursor;
   } else {
-    // Fetch all and filter to active markets for update
+    // Fetch all markets and update active + newly closed ones
     const { markets: allMarkets, lastCursor } = await getAllMarkets();
+
+    // Get our "open" markets from DB to check which ones closed
+    const dbOpenMarkets = await db
+      .select({ conditionId: marketSchema.conditionId })
+      .from(marketSchema)
+      .where(eq(marketSchema.closed, false));
+
+    // Markets to upsert: active ones + ones that were open in DB but now closed
     const activeMarkets = allMarkets.filter(isActiveMarket);
-    log(`Found ${activeMarkets.length} active markets out of ${allMarkets.length}`);
-    if (activeMarkets.length > 0) await upsertMarkets(activeMarkets);
+    const newlyClosed = allMarkets.filter(
+      (m) =>
+        m.closed &&
+        dbOpenMarkets.some((db) => db.conditionId === m.condition_id)
+    );
+
+    const toUpsert = [...activeMarkets, ...newlyClosed];
+    log(
+      `Active: ${activeMarkets.length}, newly closed: ${newlyClosed.length}, total: ${toUpsert.length}`
+    );
+    if (toUpsert.length > 0) await upsertMarkets(toUpsert);
     lastSyncCursor = lastCursor;
   }
   log(`Sync complete. Cursor: ${lastSyncCursor ? safeAtob(lastSyncCursor) : "none"}`);
