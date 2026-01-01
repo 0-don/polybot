@@ -1,5 +1,5 @@
 import { error, log } from "console";
-import { count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { formatUnits } from "ethers/lib/utils";
 import { writeFileSync } from "fs";
 import { db } from "../db";
@@ -23,6 +23,16 @@ const clobClient = getClobClient(wallet);
 // Rate limiting: 60 requests per 10 seconds = 6 requests per second max
 // We'll be more conservative: 4 requests per second = 250ms between requests
 const RATE_LIMIT_DELAY = 250;
+const API_TIMEOUT = 30000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 function safeAtob(cursor: string): string {
   try {
@@ -86,7 +96,10 @@ export async function getAllMarkets(
 
       // Only retry the API call, not the whole loop logic
       const response = await apiCallWithRetry(async () => {
-        const result = await clobClient.getMarkets(nextCursor);
+        const result = await withTimeout(
+          clobClient.getMarkets(nextCursor),
+          API_TIMEOUT
+        );
         if (!result.data) {
           throw new Error("No data in response from getMarkets");
         }
@@ -315,18 +328,25 @@ export async function syncMarkets() {
     // Fetch all markets and update active + newly closed ones
     const { markets: allMarkets, lastCursor } = await getAllMarkets();
 
-    // Get our "open" markets from DB to check which ones closed
-    const dbOpenMarkets = await db
+    // Get our active markets from DB to check which ones closed
+    const dbActiveMarkets = await db
       .select({ conditionId: marketSchema.conditionId })
       .from(marketSchema)
-      .where(eq(marketSchema.closed, false));
+      .where(
+        and(
+          eq(marketSchema.active, true),
+          eq(marketSchema.archived, false),
+          eq(marketSchema.closed, false),
+          eq(marketSchema.acceptingOrders, true)
+        )
+      );
 
     // Markets to upsert: active ones + ones that were open in DB but now closed
     const activeMarkets = allMarkets.filter(isActiveMarket);
     const newlyClosed = allMarkets.filter(
       (m) =>
-        m.closed &&
-        dbOpenMarkets.some((db) => db.conditionId === m.condition_id)
+        !isActiveMarket(m) &&
+        dbActiveMarkets.some((dbm) => dbm.conditionId === m.condition_id)
     );
 
     const toUpsert = [...activeMarkets, ...newlyClosed];
