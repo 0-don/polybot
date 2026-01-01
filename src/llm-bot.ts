@@ -287,6 +287,8 @@ async function runCycle(assetIds: string[]): Promise<void> {
       return;
     }
 
+    log(`Market conditionId: ${market.conditionId}`);
+
     const yesToken = await db
       .select()
       .from(tokenSchema)
