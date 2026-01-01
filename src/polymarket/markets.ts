@@ -1,5 +1,5 @@
 import { error, log } from "console";
-import { eq, inArray } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 import { formatUnits } from "ethers/lib/utils";
 import { writeFileSync } from "fs";
 import { db } from "../db";
@@ -68,9 +68,12 @@ async function apiCallWithRetry<T>(
   throw new Error("Should not reach here");
 }
 
-export async function getAllMarkets(): Promise<Market[]> {
-  const allMarkets = [];
-  let nextCursor = "MA==";
+export async function getAllMarkets(
+  startCursor: string = "MA=="
+): Promise<{ markets: Market[]; lastCursor: string }> {
+  const allMarkets: Market[] = [];
+  let nextCursor = startCursor;
+  let lastValidCursor = startCursor;
   let requestCount = 0;
   const startTime = Date.now();
 
@@ -91,6 +94,7 @@ export async function getAllMarkets(): Promise<Market[]> {
       });
 
       allMarkets.push(...response.data);
+      lastValidCursor = nextCursor;
       nextCursor = response.next_cursor;
       requestCount++;
 
@@ -126,7 +130,7 @@ export async function getAllMarkets(): Promise<Market[]> {
   log(
     `Finished fetching ${allMarkets.length} total markets in ${requestCount} requests`
   );
-  return allMarkets;
+  return { markets: allMarkets, lastCursor: nextCursor === "LTE=" ? nextCursor : lastValidCursor };
 }
 
 export async function upsertMarkets(marketsList: Market[]) {
@@ -291,11 +295,108 @@ export async function upsertMarkets(marketsList: Market[]) {
   );
 }
 
+// Store the last cursor for incremental syncs
+let lastSyncCursor: string | null = null;
+
+async function getOpenMarketConditionIds(): Promise<string[]> {
+  const openMarkets = await db
+    .select({ conditionId: marketSchema.conditionId })
+    .from(marketSchema)
+    .where(eq(marketSchema.closed, false));
+  return openMarkets.map((m) => m.conditionId);
+}
+
+async function fetchMarketsByConditionIds(
+  conditionIds: string[]
+): Promise<Market[]> {
+  const markets: Market[] = [];
+  const BATCH_SIZE = 50;
+
+  for (let i = 0; i < conditionIds.length; i += BATCH_SIZE) {
+    const batch = conditionIds.slice(i, i + BATCH_SIZE);
+    log(
+      `Fetching batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(
+        conditionIds.length / BATCH_SIZE
+      )} (${batch.length} markets)`
+    );
+
+    for (const conditionId of batch) {
+      try {
+        await sleep(RATE_LIMIT_DELAY);
+        const market = await apiCallWithRetry(async () => {
+          return await clobClient.getMarket(conditionId);
+        });
+        if (market) {
+          markets.push(market as Market);
+        }
+      } catch (err) {
+        error(`Failed to fetch market ${conditionId}:`, err);
+      }
+    }
+  }
+
+  return markets;
+}
+
+async function hasExistingMarkets(): Promise<boolean> {
+  const result = await db
+    .select({ count: count() })
+    .from(marketSchema)
+    .limit(1);
+  return (result[0]?.count ?? 0) > 0;
+}
+
 export async function syncMarkets() {
-  // No retry wrapper here - let the continuous loop handle failures
-  const allMarkets = await getAllMarkets();
-  writeFileSync("./markets.json", JSON.stringify(allMarkets, null, 2));
-  await upsertMarkets(allMarkets);
+  const marketsExist = await hasExistingMarkets();
+
+  if (!marketsExist) {
+    // First time: full sync
+    log("First time sync - fetching all markets...");
+    const { markets: allMarkets, lastCursor } = await getAllMarkets();
+    writeFileSync("./markets.json", JSON.stringify(allMarkets, null, 2));
+    await upsertMarkets(allMarkets);
+    lastSyncCursor = lastCursor;
+    log(`Initial sync complete. Last cursor: ${safeAtob(lastCursor)}`);
+  } else {
+    // Subsequent sync: update open markets + fetch new ones
+    log("Incremental sync - updating open markets and fetching new ones...");
+
+    // Step 1: Update all non-closed markets
+    const openConditionIds = await getOpenMarketConditionIds();
+    log(`Found ${openConditionIds.length} open markets to update`);
+
+    if (openConditionIds.length > 0) {
+      const updatedMarkets = await fetchMarketsByConditionIds(openConditionIds);
+      log(`Fetched ${updatedMarkets.length} open markets for update`);
+      if (updatedMarkets.length > 0) {
+        await upsertMarkets(updatedMarkets);
+      }
+    }
+
+    // Step 2: Fetch new markets from last cursor
+    if (lastSyncCursor && lastSyncCursor !== "LTE=") {
+      log(`Fetching new markets from cursor: ${safeAtob(lastSyncCursor)}`);
+      const { markets: newMarkets, lastCursor } =
+        await getAllMarkets(lastSyncCursor);
+
+      if (newMarkets.length > 0) {
+        log(`Found ${newMarkets.length} new markets`);
+        await upsertMarkets(newMarkets);
+      } else {
+        log("No new markets found");
+      }
+      lastSyncCursor = lastCursor;
+    } else {
+      // If we don't have a cursor, do a full fetch to get the latest cursor
+      log("No cursor available, doing full fetch to establish cursor...");
+      const { markets: allMarkets, lastCursor } = await getAllMarkets();
+      writeFileSync("./markets.json", JSON.stringify(allMarkets, null, 2));
+      await upsertMarkets(allMarkets);
+      lastSyncCursor = lastCursor;
+    }
+
+    log(`Incremental sync complete. Last cursor: ${lastSyncCursor ? safeAtob(lastSyncCursor) : "none"}`);
+  }
 }
 
 export async function checkAndClaimResolvedMarkets(
