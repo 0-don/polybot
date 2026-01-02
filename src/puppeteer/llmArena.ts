@@ -32,7 +32,7 @@ export async function llmArenaNew(page: Page, url: string) {
 
   setInterval(
     () => page.screenshot({ path: "./stream/page.jpg" }).catch(() => {}),
-    1000
+    1000,
   );
 
   await page.goto(url, { waitUntil: "networkidle2" });
@@ -65,7 +65,7 @@ export async function llmArenaNew(page: Page, url: string) {
               "If-None-Match": "*",
               "If-Modified-Since": "Thu, 01 Jan 1970 00:00:00 GMT",
             },
-          }
+          },
         );
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -73,7 +73,7 @@ export async function llmArenaNew(page: Page, url: string) {
         const html = await response.text();
         const doc = new DOMParser().parseFromString(html, "text/html");
         const script = Array.from(doc.scripts).find((s) =>
-          s.textContent?.includes("hasStyleControl")
+          s.textContent?.includes("hasStyleControl"),
         );
 
         if (!script) throw new Error("hasStyleControl script not found");
@@ -81,31 +81,31 @@ export async function llmArenaNew(page: Page, url: string) {
         const jsonStr = script.textContent
           ?.slice(
             script.textContent.indexOf('"') + 1,
-            script.textContent.lastIndexOf('"')
+            script.textContent.lastIndexOf('"'),
           )
           .replace(/\\"/g, '"');
 
         const parsedData = JSON.parse(
-          jsonStr!.slice(jsonStr!.indexOf("{"), jsonStr!.lastIndexOf("}") + 1)
+          jsonStr!.slice(jsonStr!.indexOf("{"), jsonStr!.lastIndexOf("}") + 1),
         );
 
         const parseMetadata = () => {
           const metadata: Record<string, string | undefined> = {};
 
           const lastUpdatedMatch = html.match(
-            /Last Updated[\s\S]*?<p[^>]*>([^<]+)<\/p>/i
+            /Last Updated[\s\S]*?<p[^>]*>([^<]+)<\/p>/i,
           );
           if (lastUpdatedMatch)
             metadata.last_updated = lastUpdatedMatch[1]?.trim();
 
           const totalVotesMatch = html.match(
-            /Total Votes[\s\S]*?<p[^>]*>([\d,]+)<\/p>/i
+            /Total Votes[\s\S]*?<p[^>]*>([\d,]+)<\/p>/i,
           );
           if (totalVotesMatch)
             metadata.total_votes = totalVotesMatch[1]?.trim();
 
           const totalModelsMatch = html.match(
-            /Total Models[\s\S]*?<p[^>]*>(\d+)<\/p>/i
+            /Total Models[\s\S]*?<p[^>]*>(\d+)<\/p>/i,
           );
           if (totalModelsMatch)
             metadata.total_models = totalModelsMatch[1]?.trim();
@@ -136,8 +136,8 @@ export async function llmArenaNew(page: Page, url: string) {
         `❌ Error: ${
           leaderboardData.error
         } (${emptyLeaderboardCount}/${MAX_RETRIES}) | Uptime: ${formatUptime(
-          currentUptime
-        )} | Cycle: ${cycleCount}`
+          currentUptime,
+        )} | Cycle: ${cycleCount}`,
       );
 
       if (emptyLeaderboardCount >= MAX_RETRIES) {
@@ -159,8 +159,8 @@ export async function llmArenaNew(page: Page, url: string) {
       emptyLeaderboardCount++;
       log(
         `⚠️ Empty data (${emptyLeaderboardCount}/${MAX_RETRIES}) | Uptime: ${formatUptime(
-          currentUptime
-        )} | Cycle: ${cycleCount}`
+          currentUptime,
+        )} | Cycle: ${cycleCount}`,
       );
       if (emptyLeaderboardCount >= MAX_RETRIES) {
         log("🔄 Restarting VPN...");
@@ -182,8 +182,8 @@ export async function llmArenaNew(page: Page, url: string) {
       sameContentCount++;
       log(
         `🔄 Cached (${hashShort}) ${sameContentCount}/${MAX_SAME_CONTENT_COUNT} | Uptime: ${formatUptime(
-          currentUptime
-        )} | Cycle: ${cycleCount}`
+          currentUptime,
+        )} | Cycle: ${cycleCount}`,
       );
 
       if (sameContentCount >= MAX_SAME_CONTENT_COUNT) {
@@ -208,8 +208,8 @@ export async function llmArenaNew(page: Page, url: string) {
     if (!styleControlLeaderboard) {
       log(
         `⚠️ No StyleControl data | Uptime: ${formatUptime(
-          currentUptime
-        )} | Cycle: ${cycleCount}`
+          currentUptime,
+        )} | Cycle: ${cycleCount}`,
       );
       continue;
     }
@@ -233,8 +233,8 @@ export async function llmArenaNew(page: Page, url: string) {
       successfulUpdates++;
       const uniqueEntries = Array.from(
         new Map(
-          llmLeaderboard.map((item) => [item.modelDisplayName, item])
-        ).values()
+          llmLeaderboard.map((item) => [item.modelDisplayName, item]),
+        ).values(),
       );
 
       try {
@@ -253,7 +253,7 @@ export async function llmArenaNew(page: Page, url: string) {
         const topModels = top3
           .map(
             (entry: Entry, i: number) =>
-              `#${i + 1} ${entry.modelOrganization}(${entry.rating})`
+              `#${i + 1} ${entry.modelOrganization}(${entry.rating})`,
           )
           .join(" | ");
 
@@ -270,7 +270,7 @@ export async function llmArenaNew(page: Page, url: string) {
           `✅ ${dayjs().format("HH:mm:ss")} | ${
             uniqueEntries.length
           } entries | ${hashShort} | ${fetchTime}ms`,
-          `🏆 ${topModels}`
+          `🏆 ${topModels}`,
         );
 
         // Show runtime summary every 10 successful updates
@@ -281,8 +281,8 @@ export async function llmArenaNew(page: Page, url: string) {
               (successfulUpdates / cycleCount) *
               100
             ).toFixed(1)}% | Avg cycle: ${avgCycleTime.toFixed(
-              0
-            )}ms${metadataStr}`
+              0,
+            )}ms${metadataStr}`,
           );
         }
 
@@ -290,15 +290,15 @@ export async function llmArenaNew(page: Page, url: string) {
       } catch (error) {
         log(
           `❌ DB error: ${error} | Uptime: ${formatUptime(
-            currentUptime
-          )} | Cycle: ${cycleCount}`
+            currentUptime,
+          )} | Cycle: ${cycleCount}`,
         );
       }
     } else {
       log(
         `⚠️ No entries to process | Uptime: ${formatUptime(
-          currentUptime
-        )} | Cycle: ${cycleCount}`
+          currentUptime,
+        )} | Cycle: ${cycleCount}`,
       );
     }
   }

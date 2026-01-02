@@ -22,7 +22,7 @@ const main = async () => {
 
   await llmArenaNew(
     page,
-    "https://lmarena.ai/leaderboard/text/overall-no-style-control"
+    "https://lmarena.ai/leaderboard/text/overall-no-style-control",
   );
 };
 

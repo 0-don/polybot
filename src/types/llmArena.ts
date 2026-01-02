@@ -68,16 +68,16 @@ export interface LlmAreenaLeaderboard {
 }
 
 export interface Entry {
-    rank:              number;
-    rankStyleControl:  number;
-    modelDisplayName:  string;
-    rating:            number;
-    ratingUpper:       number;
-    ratingLower:       number;
-    votes:             number;
-    modelOrganization: string;
-    modelUrl:          string;
-    license:           string;
+  rank: number;
+  rankStyleControl: number;
+  modelDisplayName: string;
+  rating: number;
+  ratingUpper: number;
+  ratingLower: number;
+  votes: number;
+  modelOrganization: string;
+  modelUrl: string;
+  license: string;
 }
 
 export interface IconClass {

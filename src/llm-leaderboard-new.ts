@@ -14,7 +14,7 @@ const main = async () => {
       log("Cleaned up temp folders on startup");
     }
   } catch {}
-  
+
   const { page } = await connect({
     turnstile: true,
     connectOption: { defaultViewport: null },
@@ -22,7 +22,7 @@ const main = async () => {
 
   await llmArenaNew(
     page,
-    "https://lmarena.ai/leaderboard/text/overall-no-style-control"
+    "https://lmarena.ai/leaderboard/text/overall-no-style-control",
   );
 };
 

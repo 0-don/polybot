@@ -26,8 +26,8 @@ async function initializeCurrentPosition(assetIds: string[]): Promise<void> {
         log(
           `Found position with token ID ${assetId}, balance: ${formatUnits(
             balance,
-            USDCE_DIGITS
-          )}`
+            USDCE_DIGITS,
+          )}`,
         );
         if (balanceAmount > highestBalance) {
           highestBalance = balanceAmount;
@@ -63,10 +63,10 @@ async function initializeCurrentPosition(assetIds: string[]): Promise<void> {
       .then((results) => results[0]);
 
     const slugMatch = market?.marketSlug.match(
-      /will-([^-]+)-have-the-(?:best|top)-ai-model/
+      /will-([^-]+)-have-the-(?:best|top)-ai-model/,
     );
     const questionMatch = market?.question.match(
-      /will\s+(\w+)\s+have\s+(?:the\s+)?(?:best|top)\s+ai\s+model/i
+      /will\s+(\w+)\s+have\s+(?:the\s+)?(?:best|top)\s+ai\s+model/i,
     );
 
     const companyName = slugMatch?.[1] || questionMatch?.[1];
@@ -76,12 +76,12 @@ async function initializeCurrentPosition(assetIds: string[]): Promise<void> {
       log(
         `✅ Initialized current position: ${companyName} (Balance: ${formatUnits(
           highestBalance.toString(),
-          USDCE_DIGITS
-        )})`
+          USDCE_DIGITS,
+        )})`,
       );
     } else {
       log(
-        `⚠️ Could not extract company from market slug: ${market?.marketSlug}`
+        `⚠️ Could not extract company from market slug: ${market?.marketSlug}`,
       );
       portfolioState.currentModelOrg = null;
     }
@@ -93,7 +93,7 @@ async function initializeCurrentPosition(assetIds: string[]): Promise<void> {
 
 async function sellAllPositions(
   assetIds: string[],
-  topModelTokenId: string | null = null
+  topModelTokenId: string | null = null,
 ): Promise<void> {
   await portfolioState.clobClient.cancelAll();
 
@@ -134,8 +134,8 @@ async function sellAllPositions(
       log(
         `Skipping dust position ${assetId}, amount: ${formatUnits(
           balance,
-          USDCE_DIGITS
-        )}`
+          USDCE_DIGITS,
+        )}`,
       );
     }
   }
@@ -153,7 +153,7 @@ async function sellAllPositions(
 async function buyPosition(
   tokenId: string,
   organization: string,
-  retries = 30
+  retries = 30,
 ): Promise<boolean> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     // Use cached collateral balance or fetch if needed
@@ -166,13 +166,13 @@ async function buyPosition(
         log(
           `Buying ${organization}, amount: ${formatUnits(
             portfolioState.collateralBalance,
-            USDCE_DIGITS
-          )} (attempt ${attempt}/${retries})`
+            USDCE_DIGITS,
+          )} (attempt ${attempt}/${retries})`,
         );
         const buyOrder = await portfolioState.clobClient.createMarketOrder({
           tokenID: tokenId,
           amount: parseFloat(
-            formatUnits(portfolioState.collateralBalance, USDCE_DIGITS)
+            formatUnits(portfolioState.collateralBalance, USDCE_DIGITS),
           ),
           side: Side.BUY,
         });
@@ -190,7 +190,7 @@ async function buyPosition(
       } catch (err) {
         error(
           `Error buying ${organization} (attempt ${attempt}/${retries}):`,
-          err
+          err,
         );
       }
     }
@@ -219,17 +219,17 @@ async function runCycle(assetIds: string[]): Promise<void> {
     const topModelOrg = topModel.modelOrganization.toLowerCase();
 
     log(
-      `Current: ${portfolioState.currentModelOrg}, Top model: ${topModelOrg}`
+      `Current: ${portfolioState.currentModelOrg}, Top model: ${topModelOrg}`,
     );
     if (portfolioState.currentModelOrg === topModelOrg) {
       log(
-        `No change in top model: ${topModel.modelDisplayName} (${topModel.modelOrganization})`
+        `No change in top model: ${topModel.modelDisplayName} (${topModel.modelOrganization})`,
       );
       return;
     }
 
     log(
-      `🚨 Top model changed to ${topModel.modelDisplayName} (${topModel.modelOrganization})`
+      `🚨 Top model changed to ${topModel.modelDisplayName} (${topModel.modelOrganization})`,
     );
 
     const currentMonth = dayjs().format("MMMM").toLowerCase();
@@ -246,17 +246,17 @@ async function runCycle(assetIds: string[]): Promise<void> {
               or(
                 ilike(
                   marketSchema.marketSlug,
-                  `will-%${topModelOrg}%-have-the-best-ai-model-at-the-end-of-${currentMonth}%`
+                  `will-%${topModelOrg}%-have-the-best-ai-model-at-the-end-of-${currentMonth}%`,
                 ),
                 ilike(
                   marketSchema.marketSlug,
-                  `will-%${topModelOrg}%-have-the-top-ai-model-on-${currentMonth}-${lastDayOfMonth}`
+                  `will-%${topModelOrg}%-have-the-top-ai-model-on-${currentMonth}-${lastDayOfMonth}`,
                 ),
                 ilike(
                   marketSchema.marketSlug,
-                  `will-%${topModelOrg}%-have-the-best-ai-model%-at-the-end-of-${currentYear}`
-                )
-              )
+                  `will-%${topModelOrg}%-have-the-best-ai-model%-at-the-end-of-${currentYear}`,
+                ),
+              ),
             ),
             // Company NOT in slug, but in question
             and(
@@ -265,10 +265,10 @@ async function runCycle(assetIds: string[]): Promise<void> {
               or(
                 ilike(
                   marketSchema.question,
-                  `%will%${topModelOrg}%have%top%ai%model%on%${currentMonth}%${lastDayOfMonth}%`
-                )
-              )
-            )
+                  `%will%${topModelOrg}%have%top%ai%model%on%${currentMonth}%${lastDayOfMonth}%`,
+                ),
+              ),
+            ),
           ),
           // Common exclusions
           not(ilike(marketSchema.marketSlug, "%coding%")),
@@ -277,8 +277,8 @@ async function runCycle(assetIds: string[]): Promise<void> {
           not(ilike(marketSchema.question, "%coding%")),
           not(ilike(marketSchema.question, "%math%")),
           eq(marketSchema.active, true),
-          eq(marketSchema.closed, false)
-        )
+          eq(marketSchema.closed, false),
+        ),
       )
       .then((markets) => markets[0]);
 
@@ -304,13 +304,13 @@ async function runCycle(assetIds: string[]): Promise<void> {
 
     // Check if we already have this position using cached data
     const currentBalance = await portfolioState.fetchAssetBalanceIfNeeded(
-      yesToken.tokenId
+      yesToken.tokenId,
     );
 
     // Only buy if we don't already have a significant position
     if (BigInt(currentBalance) <= MINIMUM_BALANCE) {
       log(`Buying position for ${topModelOrg} (token ID: ${yesToken.tokenId})`);
-      await buyPosition(yesToken.tokenId, topModelOrg);
+      // await buyPosition(yesToken.tokenId, topModelOrg);
     } else {
       log(`Already holding ${topModelOrg} position, no need to buy`);
       portfolioState.currentModelOrg = topModelOrg;

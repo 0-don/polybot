@@ -7,7 +7,7 @@ export async function sleep(ms: number): Promise<void> {
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 1000,
 ): Promise<T> {
   let lastError: Error;
 
@@ -45,7 +45,7 @@ export async function retryWithBackoff<T>(
       log(
         `Attempt ${attempt + 1} failed${
           isRateLimit ? " (rate limit)" : ""
-        }, retrying in ${Math.round(delay)}ms...`
+        }, retrying in ${Math.round(delay)}ms...`,
       );
       await sleep(delay);
     }

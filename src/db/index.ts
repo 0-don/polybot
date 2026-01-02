@@ -11,11 +11,11 @@ export const db = drizzle(connection);
 
 export function conflictUpdateAllExcept<
   T extends PgTable,
-  E extends (keyof T["$inferInsert"])[]
+  E extends (keyof T["$inferInsert"])[],
 >(table: T, except: E) {
   const columns = getTableColumns(table);
   const updateColumns = Object.entries(columns).filter(
-    ([col]) => !except.includes(col as keyof typeof table.$inferInsert)
+    ([col]) => !except.includes(col as keyof typeof table.$inferInsert),
   );
 
   return updateColumns.reduce(
@@ -23,10 +23,10 @@ export function conflictUpdateAllExcept<
       ...acc,
       [colName]: sql.raw(`excluded."${column.name}"`),
     }),
-    {}
+    {},
   );
 }
 
-migrate(db, { migrationsFolder: resolve("drizzle") })
+await migrate(db, { migrationsFolder: resolve("drizzle") })
   .then(() => log("Database migrated successfully"))
   .catch(() => process.exit(1));

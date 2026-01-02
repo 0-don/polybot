@@ -46,8 +46,8 @@ export class PortfolioState {
       log(
         `Fetched balance for ${assetId}: ${formatUnits(
           balance.balance,
-          USDCE_DIGITS
-        )}`
+          USDCE_DIGITS,
+        )}`,
       );
     }
 
@@ -63,8 +63,8 @@ export class PortfolioState {
     log(
       `Fetched collateral balance: ${formatUnits(
         balance.balance,
-        USDCE_DIGITS
-      )}`
+        USDCE_DIGITS,
+      )}`,
     );
     return this.collateralBalance;
   }

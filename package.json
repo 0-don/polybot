@@ -21,6 +21,7 @@
     "llm-leaderboard-new": "bun --bun src/llm-leaderboard-new.ts",
     "drizzle": "bun run reset && drizzle-kit generate",
     "reset": "bun ./drizzle/reset-db.ts",
+    "format": "prettier --write .",
     "gen": "bun --bun run src/utils/generate-key.ts"
   },
   "dependencies": {
@@ -41,7 +42,8 @@
     "@types/dockerode": "3.3.47",
     "@types/node": "25.0.3",
     "drizzle-kit": "0.31.8",
-    "postgres": "3.4.7"
+    "postgres": "3.4.7",
+    "prettier": "^3.7.4"
   },
   "peerDependencies": {
     "typescript": "5.9.3"

@@ -37,7 +37,7 @@ export interface Trade {
 
 // Parse tweet range from question
 export function parseTweetRange(
-  question: string
+  question: string,
 ): { min: number; max: number | null } | null {
   const q = question.replace(/–/g, "-");
   let m = q.match(/(\d+)\s*-\s*(\d+)\s+times/i);
@@ -66,8 +66,8 @@ export async function findElonTweetMarkets(): Promise<TweetRange[]> {
     .where(
       and(
         ilike(marketSchema.question, "Will Elon tweet % times %"),
-        eq(marketSchema.active, true)
-      )
+        eq(marketSchema.active, true),
+      ),
     );
 
   if (!markets.length) {
@@ -81,10 +81,13 @@ export async function findElonTweetMarkets(): Promise<TweetRange[]> {
     .from(tokenSchema)
     .where(inArray(tokenSchema.marketId, marketIds));
 
-  const tokensByMarket = tokens.reduce((acc, token) => {
-    (acc[token.marketId] ??= []).push(token);
-    return acc;
-  }, {} as Record<number, typeof tokens>);
+  const tokensByMarket = tokens.reduce(
+    (acc, token) => {
+      (acc[token.marketId] ??= []).push(token);
+      return acc;
+    },
+    {} as Record<number, typeof tokens>,
+  );
 
   return markets
     .map((market) => {
@@ -111,7 +114,7 @@ export async function findElonTweetMarkets(): Promise<TweetRange[]> {
 export async function fetchTrades(
   tokenId: string,
   startTs: number,
-  endTs: number
+  endTs: number,
 ): Promise<Trade[]> {
   let trades: Trade[] = [];
   await Promise.all([
@@ -128,7 +131,7 @@ export async function fetchTradesBatch(
   makerAssetId: string,
   takerAssetId: string,
   startTs: number,
-  endTs: number
+  endTs: number,
 ): Promise<void> {
   let skip = 0;
   let hasMore = true;
@@ -184,12 +187,12 @@ export async function fetchTradesBatch(
         const baseAmount = BigInt(
           makerAssetId === USDC_ID
             ? event.takerAmountFilled
-            : event.makerAmountFilled
+            : event.makerAmountFilled,
         );
         const quoteAmount = BigInt(
           makerAssetId === USDC_ID
             ? event.makerAmountFilled
-            : event.takerAmountFilled
+            : event.takerAmountFilled,
         );
 
         if (baseAmount === 0n) continue;
@@ -197,8 +200,8 @@ export async function fetchTradesBatch(
         const price = parseFloat(
           formatUnits(
             (quoteAmount * 10n ** BigInt(USDCE_DIGITS)) / baseAmount,
-            USDCE_DIGITS
-          )
+            USDCE_DIGITS,
+          ),
         );
 
         trades.push({
@@ -222,7 +225,7 @@ export async function fetchTradesBatch(
 export async function saveTradesToDatabase(
   tokenId: string,
   outcome: string,
-  trades: Trade[]
+  trades: Trade[],
 ): Promise<void> {
   if (!trades.length) return;
 
@@ -246,7 +249,7 @@ export async function saveTradesToDatabase(
               volume: String(trade.volume),
               size: String(trade.size),
               outcome,
-            }))
+            })),
           )
           .onConflictDoNothing({
             target: [tradeHistorySchema.tokenId, tradeHistorySchema.ts],
@@ -267,18 +270,21 @@ export async function syncTradeHistory() {
   //   )
   //   .sort((a, b) => a.min - b.min);
 
-  const groupedMarkets = markets.reduce((groups, market) => {
-    const key = market.questionId.substring(0, 60);
-    (groups[key] ??= []).push(market);
-    return groups;
-  }, {} as Record<string, TweetRange[]>);
+  const groupedMarkets = markets.reduce(
+    (groups, market) => {
+      const key = market.questionId.substring(0, 60);
+      (groups[key] ??= []).push(market);
+      return groups;
+    },
+    {} as Record<string, TweetRange[]>,
+  );
 
   for (const marketGroup of Object.values(groupedMarkets)) {
     for (const market of marketGroup) {
       log(`Processing market: "${market.question}"`);
 
       for (const token of market.tokens.filter((t) =>
-        t.outcome?.toLowerCase().includes("yes")
+        t.outcome?.toLowerCase().includes("yes"),
       )) {
         if (!token.tokenId) continue;
 

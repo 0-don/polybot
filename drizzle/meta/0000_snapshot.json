@@ -60,9 +60,7 @@
         "llm_leaderboard_model_display_name_unique": {
           "name": "llm_leaderboard_model_display_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "model_display_name"
-          ]
+          "columns": ["model_display_name"]
         }
       },
       "policies": {},
@@ -257,9 +255,7 @@
         "market_market_slug_unique": {
           "name": "market_market_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "market_slug"
-          ]
+          "columns": ["market_slug"]
         }
       },
       "policies": {},
@@ -289,12 +285,8 @@
           "name": "market_tag_market_id_market_id_fk",
           "tableFrom": "market_tag",
           "tableTo": "market",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -302,10 +294,7 @@
       "compositePrimaryKeys": {
         "market_tag_market_id_tag_pk": {
           "name": "market_tag_market_id_tag_pk",
-          "columns": [
-            "market_id",
-            "tag"
-          ]
+          "columns": ["market_id", "tag"]
         }
       },
       "uniqueConstraints": {},
@@ -349,12 +338,8 @@
           "name": "reward_rate_market_id_market_id_fk",
           "tableFrom": "reward_rate",
           "tableTo": "market",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -402,12 +387,8 @@
           "name": "reward_market_id_market_id_fk",
           "tableFrom": "reward",
           "tableTo": "market",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -467,12 +448,8 @@
           "name": "token_market_id_market_id_fk",
           "tableFrom": "token",
           "tableTo": "market",
-          "columnsFrom": [
-            "market_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["market_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

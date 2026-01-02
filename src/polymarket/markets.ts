@@ -29,7 +29,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,
     new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms),
     ),
   ]);
 }
@@ -46,7 +46,7 @@ function safeAtob(cursor: string): string {
 // Simple retry only for API calls that might hit rate limits
 async function apiCallWithRetry<T>(
   apiCall: () => Promise<T>,
-  maxRetries: number = 3
+  maxRetries: number = 3,
 ): Promise<T> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -61,7 +61,7 @@ async function apiCallWithRetry<T>(
         log(
           `Rate limit hit, waiting ${waitTime / 1000}s before retry ${
             attempt + 2
-          }/${maxRetries}...`
+          }/${maxRetries}...`,
         );
         await sleep(waitTime);
         continue;
@@ -79,7 +79,7 @@ async function apiCallWithRetry<T>(
 }
 
 export async function getAllMarkets(
-  startCursor: string = "MA=="
+  startCursor: string = "MA==",
 ): Promise<{ markets: Market[]; lastCursor: string }> {
   const allMarkets: Market[] = [];
   let nextCursor = startCursor;
@@ -98,7 +98,7 @@ export async function getAllMarkets(
       const response = await apiCallWithRetry(async () => {
         const result = await withTimeout(
           clobClient.getMarkets(nextCursor),
-          API_TIMEOUT
+          API_TIMEOUT,
         );
         if (!result.data) {
           throw new Error("No data in response from getMarkets");
@@ -115,7 +115,7 @@ export async function getAllMarkets(
       log(
         `Fetched ${
           response.data?.length || 0
-        } markets, next cursor: ${decodedCursor} (total: ${allMarkets.length})`
+        } markets, next cursor: ${decodedCursor} (total: ${allMarkets.length})`,
       );
 
       // Log progress every 50 requests
@@ -124,8 +124,8 @@ export async function getAllMarkets(
         const rate = requestCount / elapsed;
         log(
           `Progress: ${requestCount} requests in ${elapsed.toFixed(
-            1
-          )}s (${rate.toFixed(2)} req/s)`
+            1,
+          )}s (${rate.toFixed(2)} req/s)`,
         );
       }
     } catch (err) {
@@ -141,16 +141,19 @@ export async function getAllMarkets(
   }
 
   log(
-    `Finished fetching ${allMarkets.length} total markets in ${requestCount} requests`
+    `Finished fetching ${allMarkets.length} total markets in ${requestCount} requests`,
   );
-  return { markets: allMarkets, lastCursor: nextCursor === "LTE=" ? nextCursor : lastValidCursor };
+  return {
+    markets: allMarkets,
+    lastCursor: nextCursor === "LTE=" ? nextCursor : lastValidCursor,
+  };
 }
 
 export async function upsertMarkets(marketsList: Market[]) {
   const startTime = new Date();
   log(
     `Start inserting ${marketsList.length} markets into database...`,
-    startTime.toISOString()
+    startTime.toISOString(),
   );
 
   // Process in batches of 100 - no need for retry here since it's just database ops
@@ -163,7 +166,7 @@ export async function upsertMarkets(marketsList: Market[]) {
     const totalBatches = Math.ceil(marketsList.length / BATCH_SIZE);
 
     log(
-      `Processing batch ${batchNumber}/${totalBatches} (${batch.length} markets)`
+      `Processing batch ${batchNumber}/${totalBatches} (${batch.length} markets)`,
     );
 
     try {
@@ -219,7 +222,7 @@ export async function upsertMarkets(marketsList: Market[]) {
               market,
               dbId: dbMarket!.id!,
             };
-          })
+          }),
         );
 
         // Collect all dbIds for the batch
@@ -250,7 +253,7 @@ export async function upsertMarkets(marketsList: Market[]) {
               outcome: token.outcome,
               price: String(token.price),
               winner: token.winner,
-            })) || []
+            })) || [],
         );
 
         const tags = marketsWithIds.flatMap(
@@ -258,7 +261,7 @@ export async function upsertMarkets(marketsList: Market[]) {
             market.tags?.map((tag) => ({
               marketId: dbId,
               tag,
-            })) || []
+            })) || [],
         );
 
         const rewards = marketsWithIds
@@ -275,7 +278,7 @@ export async function upsertMarkets(marketsList: Market[]) {
               marketId: dbId,
               assetAddress: rate.asset_address,
               rewardsDailyRate: String(rate.rewards_daily_rate),
-            })) || []
+            })) || [],
         );
 
         // Bulk insert all related data
@@ -288,7 +291,7 @@ export async function upsertMarkets(marketsList: Market[]) {
 
       processedCount += batch.length;
       log(
-        `Completed batch ${batchNumber}/${totalBatches} (${processedCount}/${marketsList.length} markets processed)`
+        `Completed batch ${batchNumber}/${totalBatches} (${processedCount}/${marketsList.length} markets processed)`,
       );
     } catch (err) {
       error(`Failed to process batch ${batchNumber}:`, err);
@@ -302,9 +305,9 @@ export async function upsertMarkets(marketsList: Market[]) {
     `Finished inserting ${
       marketsList.length
     } markets into database successfully in ${durationSecs}s (${Math.round(
-      marketsList.length / durationSecs
+      marketsList.length / durationSecs,
     )} markets/sec)`,
-    endTime.toISOString()
+    endTime.toISOString(),
   );
 }
 
@@ -337,8 +340,8 @@ export async function syncMarkets() {
           eq(marketSchema.active, true),
           eq(marketSchema.archived, false),
           eq(marketSchema.closed, false),
-          eq(marketSchema.acceptingOrders, true)
-        )
+          eq(marketSchema.acceptingOrders, true),
+        ),
       );
 
     // Markets to upsert: active ones + ones that were open in DB but now closed
@@ -346,21 +349,23 @@ export async function syncMarkets() {
     const newlyClosed = allMarkets.filter(
       (m) =>
         !isActiveMarket(m) &&
-        dbActiveMarkets.some((dbm) => dbm.conditionId === m.condition_id)
+        dbActiveMarkets.some((dbm) => dbm.conditionId === m.condition_id),
     );
 
     const toUpsert = [...activeMarkets, ...newlyClosed];
     log(
-      `Active: ${activeMarkets.length}, newly closed: ${newlyClosed.length}, total: ${toUpsert.length}`
+      `Active: ${activeMarkets.length}, newly closed: ${newlyClosed.length}, total: ${toUpsert.length}`,
     );
     if (toUpsert.length > 0) await upsertMarkets(toUpsert);
     lastSyncCursor = lastCursor;
   }
-  log(`Sync complete. Cursor: ${lastSyncCursor ? safeAtob(lastSyncCursor) : "none"}`);
+  log(
+    `Sync complete. Cursor: ${lastSyncCursor ? safeAtob(lastSyncCursor) : "none"}`,
+  );
 }
 
 export async function checkAndClaimResolvedMarkets(
-  assetIds: string[]
+  assetIds: string[],
 ): Promise<void> {
   try {
     log("Checking for positions to redeem...");
@@ -399,8 +404,8 @@ export async function checkAndClaimResolvedMarkets(
           `Found resolved market with balance: ${market.question}`,
           `Position: ${token.outcome}, Balance: ${formatUnits(
             balance,
-            USDCE_DIGITS
-          )}`
+            USDCE_DIGITS,
+          )}`,
         );
 
         if (!market.conditionId) {
