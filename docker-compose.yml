@@ -1,7 +1,7 @@
 services:
   polybot-llm-bot:
     container_name: polybot-llm-bot
-    network_mode: bridge
+    network_mode: service:polybot-vpn-leaderboard
     depends_on:
       - polybot-db
       - polybot-vpn-leaderboard
@@ -13,15 +13,13 @@ services:
       target: llm-bot
     restart: always
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:5436/${POSTGRES_DB}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@polybot-db:5432/${POSTGRES_DB}
       - PK=${PK}
       - ALCHEMY_API_KEY=${ALCHEMY_API_KEY}
       - POLYMARKET_FUNDER_ADDRESS=${POLYMARKET_FUNDER_ADDRESS}
       - CLOB_API_KEY=${CLOB_API_KEY}
       - CLOB_SECRET=${CLOB_SECRET}
       - CLOB_PASS_PHRASE=${CLOB_PASS_PHRASE}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
   polybot-llm-leaderboard:
     container_name: polybot-llm-leaderboard
     network_mode: service:polybot-vpn-leaderboard
@@ -37,7 +35,7 @@ services:
       - ~/polybot-stream/:/app/stream
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:5436/${POSTGRES_DB}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@polybot-db:5432/${POSTGRES_DB}
       - CONTAINER_TYPE=PRIMARY
     shm_size: "8gb"
 
@@ -56,12 +54,13 @@ services:
   #     - ~/polybot-stream/:/app/stream
   #     - /var/run/docker.sock:/var/run/docker.sock
   #   environment:
-  #     - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:5436/${POSTGRES_DB}
+  #     - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@polybot-db:5432/${POSTGRES_DB}
   #     - CONTAINER_TYPE=SECONDARY
   #   shm_size: "8gb"
   polybot-markets:
     container_name: polybot-markets
-    network_mode: bridge
+    networks:
+      - internal
     depends_on:
       - polybot-db
       - polybot-vpn-leaderboard
@@ -71,20 +70,19 @@ services:
       target: markets
     restart: always
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:5436/${POSTGRES_DB}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@polybot-db:5432/${POSTGRES_DB}
       - PK=${PK}
       - ALCHEMY_API_KEY=${ALCHEMY_API_KEY}
       - POLYMARKET_FUNDER_ADDRESS=${POLYMARKET_FUNDER_ADDRESS}
       - CLOB_API_KEY=${CLOB_API_KEY}
       - CLOB_SECRET=${CLOB_SECRET}
       - CLOB_PASS_PHRASE=${CLOB_PASS_PHRASE}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
   polybot-db:
     container_name: polybot-db
     image: postgres:16-alpine
     restart: always
-    network_mode: bridge
+    networks:
+      - internal
     ports:
       - 5436:5432
     environment:
@@ -95,7 +93,8 @@ services:
     # epic puffer
     container_name: polybot-vpn-leaderboard
     restart: always
-    network_mode: bridge
+    networks:
+      - internal
     image: qmcgaw/gluetun
     cap_add:
       - NET_ADMIN
@@ -106,13 +105,14 @@ services:
       - VPN_TYPE=wireguard
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
       - WIREGUARD_ADDRESSES="10.71.184.246/32"
+      - SERVER_COUNTRIES=Albania,Argentina,Austria,Brazil,Bulgaria,Chile,Colombia,Croatia,Cyprus,Czech Republic,Denmark,Estonia,Finland,Greece,Hong Kong,Hungary,Indonesia,Ireland,Japan,South Korea,Latvia,Lithuania,Luxembourg,Malta,Mexico,Netherlands,New Zealand,Norway,Portugal,Romania,Serbia,Slovakia,Slovenia,Spain,Sweden,Switzerland,Turkey
       - LOG_LEVEL=debug
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - DNS_ADDRESS=127.0.0.11
   # polybot-vpn-leaderboard-new:
   #   container_name: polybot-vpn-leaderboard-new
   #   restart: always
-  #   network_mode: bridge
+  #   networks:
+  #     - internal
   #   image: qmcgaw/gluetun
   #   cap_add:
   #     - NET_ADMIN
@@ -125,5 +125,8 @@ services:
   #     - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
   #     - OPENVPN_CIPHERS=AES-256-GCM
   #     - LOG_LEVEL=debug
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway"
+  #     - DNS_ADDRESS=127.0.0.11
+
+networks:
+  internal:
+    driver: bridge
