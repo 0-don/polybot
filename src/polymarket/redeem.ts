@@ -16,7 +16,7 @@ import { signAndExecuteSafeTransaction } from "./safeWallet/safe-helpers";
 
 async function getWalletAndSafe() {
   const provider = new ethers.providers.JsonRpcProvider(
-    `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
+    `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
   );
   const wallet = new ethers.Wallet(process.env.PK).connect(provider);
   const safeAddress = process.env.POLYMARKET_FUNDER_ADDRESS;
@@ -81,7 +81,7 @@ export async function approveRedeem() {
 export async function redeem(
   conditionId: string,
   negRisk: boolean | null,
-  redeemAmounts: [string, string]
+  redeemAmounts: [string, string],
 ) {
   await approveRedeem();
 

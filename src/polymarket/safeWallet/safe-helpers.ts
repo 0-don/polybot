@@ -24,7 +24,7 @@ function joinHexData(hexData: string[]): string {
 
 function getHexDataLength(hexData: string): number {
   return Math.ceil(
-    (hexData.startsWith("0x") ? hexData.length - 2 : hexData.length) / 2
+    (hexData.startsWith("0x") ? hexData.length - 2 : hexData.length) / 2,
   );
 }
 
@@ -62,13 +62,13 @@ function abiEncodePacked(...params: { type: string; value: any }[]): string {
       }
 
       throw new Error(`unsupported type ${type}`);
-    })
+    }),
   );
 }
 
 async function signTransactionHash(
   signer: Wallet,
-  message: string
+  message: string,
 ): Promise<SplitSignature> {
   const messageArray = ethers.utils.arrayify(message);
   let sig = await signer.signMessage(messageArray);
@@ -97,7 +97,7 @@ async function signTransactionHash(
 }
 
 const createSafeMultisendTransaction = (
-  txns: SafeTransaction[]
+  txns: SafeTransaction[],
 ): SafeTransaction => {
   const data = SAFE_MULTISEND_INTERFACE.encodeFunctionData("multiSend", [
     joinHexData(
@@ -107,9 +107,9 @@ const createSafeMultisendTransaction = (
           { type: "address", value: tx.to },
           { type: "uint256", value: tx.value },
           { type: "uint256", value: getHexDataLength(tx.data) },
-          { type: "bytes", value: tx.data }
-        )
-      )
+          { type: "bytes", value: tx.data },
+        ),
+      ),
     ),
   ]);
 
@@ -122,7 +122,7 @@ const createSafeMultisendTransaction = (
 };
 
 export const aggregateTransaction = (
-  txns: SafeTransaction[]
+  txns: SafeTransaction[],
 ): SafeTransaction => {
   let transaction: SafeTransaction;
   if (txns.length == 1) {
@@ -137,7 +137,7 @@ export const signAndExecuteSafeTransaction = async (
   signer: Wallet,
   safe: Contract,
   txn: SafeTransaction,
-  overrides?: ethers.Overrides
+  overrides?: ethers.Overrides,
 ): Promise<TransactionResponse> => {
   if (overrides == null) {
     overrides = {};
@@ -160,14 +160,14 @@ export const signAndExecuteSafeTransaction = async (
     gasPrice,
     gasToken,
     refundReceiver,
-    nonce
+    nonce,
   );
 
   const rsvSignature = await signTransactionHash(signer, txHash);
   const packedSig = abiEncodePacked(
     { type: "uint256", value: rsvSignature.r },
     { type: "uint256", value: rsvSignature.s },
-    { type: "uint8", value: rsvSignature.v }
+    { type: "uint8", value: rsvSignature.v },
   );
 
   return safe.execTransaction(
@@ -181,6 +181,6 @@ export const signAndExecuteSafeTransaction = async (
     gasToken,
     refundReceiver,
     packedSig,
-    overrides
+    overrides,
   );
 };

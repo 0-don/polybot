@@ -81,7 +81,7 @@ async function fetchTradeHistory(tokenId: string, outcomeLabel: string) {
             return response.json();
           },
           5,
-          2000
+          2000,
         ); // 5 retries, 2s base delay
 
         if (result.errors) throw result.errors;
@@ -91,17 +91,17 @@ async function fetchTradeHistory(tokenId: string, outcomeLabel: string) {
 
         const trades = events.map((event) => {
           const baseAmount = BigInt(
-            isMakerSeller ? event.makerAmountFilled : event.takerAmountFilled
+            isMakerSeller ? event.makerAmountFilled : event.takerAmountFilled,
           );
           const quoteAmount = BigInt(
-            isMakerSeller ? event.takerAmountFilled : event.makerAmountFilled
+            isMakerSeller ? event.takerAmountFilled : event.makerAmountFilled,
           );
           const ts = parseInt(event.timestamp, 10);
           const price = parseFloat(
             formatUnits(
               (quoteAmount * 10n ** BigInt(USDCE_DIGITS)) / baseAmount,
-              USDCE_DIGITS
-            )
+              USDCE_DIGITS,
+            ),
           );
 
           return {
@@ -164,8 +164,8 @@ async function collectMarketContext() {
           eq(marketSchema.closed, false),
           eq(marketSchema.enableOrderBook, true),
           gte(marketSchema.endDateIso, min),
-          lte(marketSchema.endDateIso, max)
-        )
+          lte(marketSchema.endDateIso, max),
+        ),
       )
       .then((results) => results.filter((m) => !isSportsMarket(m.question)));
 
@@ -204,7 +204,7 @@ async function collectMarketContext() {
             await fetchTradeHistory(token.tokenId!, token.outcome!);
           },
           3,
-          1000
+          1000,
         );
 
         const volume = await calculateTokenVolume(token.tokenId);
@@ -225,8 +225,8 @@ async function collectMarketContext() {
       if (slippagePercentage > MAX_SLIPPAGE_PERCENTAGE) {
         log(
           `Skipping market due to high slippage (${slippagePercentage.toFixed(
-            2
-          )}%): ${market.question}`
+            2,
+          )}%): ${market.question}`,
         );
         continue;
       }
@@ -259,24 +259,24 @@ async function collectMarketContext() {
         }))
         .sort(
           (a, b) =>
-            new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
+            new Date(a.endDate).getTime() - new Date(b.endDate).getTime(),
         );
 
       await retryWithBackoff(
         async () => {
           writeFileSync(
             "./market-context.yml",
-            yamlStringify(groupedMarkets, { indent: 2, lineWidth: 120 })
+            yamlStringify(groupedMarkets, { indent: 2, lineWidth: 120 }),
           );
         },
         3,
-        500
+        500,
       );
 
       log(
         `Progress saved: ${i + 1}/${markets.length} markets processed (${
           groupedMarkets.length
-        } groups)`
+        } groups)`,
       );
     }
 
@@ -293,7 +293,7 @@ async function main() {
         // await syncMarkets();
       },
       3,
-      5000
+      5000,
     );
 
     await collectMarketContext();

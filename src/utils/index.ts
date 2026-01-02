@@ -21,9 +21,9 @@ export function extractAssetIdsFromTrades(trades: Trade[]): string[] {
     ...new Set(
       trades
         .map((t) =>
-          t.trader_side === "TAKER" ? t.asset_id : t.maker_orders[0]?.asset_id
+          t.trader_side === "TAKER" ? t.asset_id : t.maker_orders[0]?.asset_id,
         )
-        .filter(Boolean)
+        .filter(Boolean),
     ),
   ] as string[];
 }

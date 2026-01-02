@@ -52,7 +52,7 @@ export async function gracefulShutdown(exitCode: number = 0) {
 
 export const checkIfWorkingElseRestart = async (
   page: Page,
-  count: number = 1
+  count: number = 1,
 ): Promise<unknown> => {
   try {
     await ipCheck(page);
@@ -70,7 +70,7 @@ export const checkIfWorkingElseRestart = async (
 
 export const ipCheck = async (
   page: Page,
-  count: number = 1
+  count: number = 1,
 ): Promise<unknown> => {
   try {
     const { ip } = await (

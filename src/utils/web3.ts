@@ -23,5 +23,5 @@ export const getClobClient = (wallet: Wallet) =>
     wallet,
     creds,
     SignatureType.POLY_GNOSIS_SAFE,
-    process.env.POLYMARKET_FUNDER_ADDRESS
+    process.env.POLYMARKET_FUNDER_ADDRESS,
   );

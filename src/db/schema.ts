@@ -59,10 +59,10 @@ export const marketSchema = pgTable("market", {
   secondsDelay: integer("seconds_delay").default(0),
   fpmm: text("fpmm").default(""),
   makerBaseFee: decimal("maker_base_fee", { precision: 10, scale: 6 }).default(
-    "0"
+    "0",
   ),
   takerBaseFee: decimal("taker_base_fee", { precision: 10, scale: 6 }).default(
-    "0"
+    "0",
   ),
   notificationsEnabled: boolean("notifications_enabled").default(true),
 
@@ -96,7 +96,7 @@ export const marketTagSchema = pgTable(
       .references(() => marketSchema.id, { onDelete: "cascade" }),
     tag: text("tag").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.marketId, t.tag] })]
+  (t) => [primaryKey({ columns: [t.marketId, t.tag] })],
 );
 
 export const rewardRateSchema = pgTable("reward_rate", {
@@ -133,5 +133,5 @@ export const tradeHistorySchema = pgTable(
     outcome: text("outcome").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
   },
-  (table) => [uniqueIndex("uniq_token_ts").on(table.tokenId, table.ts)]
+  (table) => [uniqueIndex("uniq_token_ts").on(table.tokenId, table.ts)],
 );

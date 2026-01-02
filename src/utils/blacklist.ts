@@ -97,16 +97,16 @@ export function isSportsMarket(marketQuestion: string): boolean {
   // Check each category
   return (
     SPORTS_LEAGUES.some((term) =>
-      normalizedQuestion.includes(term.toLowerCase())
+      normalizedQuestion.includes(term.toLowerCase()),
     ) ||
     SPORTS_TEAMS.some((term) =>
-      normalizedQuestion.includes(term.toLowerCase())
+      normalizedQuestion.includes(term.toLowerCase()),
     ) ||
     SPORTS_PLAYERS.some((term) =>
-      normalizedQuestion.includes(term.toLowerCase())
+      normalizedQuestion.includes(term.toLowerCase()),
     ) ||
     SPORTS_EVENTS.some((term) =>
-      normalizedQuestion.includes(term.toLowerCase())
+      normalizedQuestion.includes(term.toLowerCase()),
     )
   );
 }
