@@ -33,6 +33,11 @@ services:
       dockerfile: Dockerfile
       target: llm-leaderboard
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '3'
+          memory: 4G
     labels:
       - "traefik.enable=false"
     volumes:
@@ -73,6 +78,11 @@ services:
       dockerfile: Dockerfile
       target: markets
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '3'
+          memory: 4G
     labels:
       - "traefik.enable=false"
     environment:
@@ -87,6 +97,11 @@ services:
     container_name: polybot-db
     image: postgres:16-alpine
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
     networks:
       - internal
     ports:

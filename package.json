@@ -43,7 +43,7 @@
     "@types/node": "25.1.0",
     "drizzle-kit": "0.31.8",
     "postgres": "3.4.8",
-    "prettier": "^3.8.1"
+    "prettier": "3.8.1"
   },
   "peerDependencies": {
     "typescript": "5.9.3"
