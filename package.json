@@ -27,6 +27,7 @@
   "dependencies": {
     "@ethersproject/abstract-provider": "5.8.0",
     "@polymarket/clob-client": "5.8.1",
+    "@polymarket/order-utils": "3.0.1",
     "alchemy-sdk": "3.6.5",
     "cheerio": "1.2.0",
     "dayjs": "1.11.20",
