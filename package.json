@@ -26,26 +26,26 @@
   },
   "dependencies": {
     "@ethersproject/abstract-provider": "5.8.0",
-    "@polymarket/clob-client": "5.2.1",
+    "@polymarket/clob-client": "5.8.1",
     "alchemy-sdk": "3.6.5",
     "cheerio": "1.2.0",
-    "dayjs": "1.11.19",
-    "dockerode": "4.0.9",
-    "drizzle-orm": "0.45.1",
+    "dayjs": "1.11.20",
+    "dockerode": "4.0.10",
+    "drizzle-orm": "0.45.2",
     "ethers": "5.8.0",
     "puppeteer-real-browser": "1.4.4",
-    "yaml": "2.8.2"
+    "yaml": "2.8.3"
   },
   "devDependencies": {
-    "@dotenvx/dotenvx": "1.52.0",
-    "@types/bun": "1.3.8",
+    "@dotenvx/dotenvx": "1.60.0",
+    "@types/bun": "1.3.11",
     "@types/dockerode": "4.0.1",
-    "@types/node": "25.1.0",
-    "drizzle-kit": "0.31.8",
-    "postgres": "3.4.8",
+    "@types/node": "25.5.2",
+    "drizzle-kit": "0.31.10",
+    "postgres": "3.4.9",
     "prettier": "3.8.1"
   },
   "peerDependencies": {
-    "typescript": "5.9.3"
+    "typescript": "6.0.2"
   }
 }
